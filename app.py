@@ -62,23 +62,21 @@ def detect_api_key_source():
     return "not found"
 
 def ensure_spacy_model(model_name="en_core_web_sm"):
-    """Try to load the spaCy model, download it if missing."""
+    """Try to load the spaCy model. If unavailable, fallback to a blank 'en' pipeline.
+
+    Avoid attempting to download models at runtime because Streamlit Cloud may not allow
+    installing packages into the environment at runtime (permission errors).
+    """
     try:
         spacy.load(model_name)
         return True, f"spaCy model '{model_name}' is available"
-    except OSError:
+    except Exception:
         try:
-            # download the model and try again
-            import subprocess, sys as _sys
-            # Use spaCy CLI to download the model
-            from spacy.cli import download
-            download(model_name)
-            spacy.load(model_name)
-            return True, f"spaCy model '{model_name}' downloaded and loaded"
+            # fallback: create a blank English pipeline (no additional models needed)
+            sp = spacy.blank("en")
+            return False, "spaCy model not available; using blank 'en' pipeline with reduced features"
         except Exception as e:
-            return False, f"Failed to download spaCy model '{model_name}': {e}"
-    except Exception as e:
-        return False, f"Error loading spaCy model '{model_name}': {e}"
+            return False, f"spaCy is not available: {e}"
 
 # Announce key presence (non-sensitive) and ensure NLP model on startup
 _key_source = detect_api_key_source()

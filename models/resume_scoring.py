@@ -43,14 +43,18 @@ MEDIUM_FIT_THRESHOLD = 60
 MAX_EXPERIENCE_YEARS_COUNTED = 25  # cap for experience points
 EXPERIENCE_POINTS_PER_YEAR = WEIGHTS["experience"] / MAX_EXPERIENCE_YEARS_COUNTED
 
-# load spaCy
+# load spaCy: try to load the small English model; if not available (Cloud restrictions),
+# fall back to a lightweight blank English pipeline which is functional but has reduced NLP features.
 try:
     nlp = spacy.load("en_core_web_sm")
-except OSError:
-    print("Downloading 'en_core_web_sm' model...")
-    from spacy.cli import download
-    download("en_core_web_sm")
-    nlp = spacy.load("en_core_web_sm")
+except Exception:
+    try:
+        # Fallback: create a blank English pipeline (no parser/ner by default)
+        nlp = spacy.blank("en")
+        # Optionally register basic components or warn that functionality is reduced
+        print("Warning: 'en_core_web_sm' not available. Using spacy.blank('en') fallback with reduced features.")
+    except Exception:
+        nlp = None
 
 
 # ---------- UTILITIES ----------
