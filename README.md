@@ -67,6 +67,20 @@ Scoring JSONs and logs are stored under the `scores/` directory at the project r
 - Never commit `config.py` or your secret API keys to source control. Use `.env` or environment variables in production.
 - Rotate API keys if you think they were exposed.
 
+## Deploy to Streamlit Community Cloud
+
+1. Push your repository to GitHub (this project) and ensure the `main` branch contains your app.
+2. Go to https://share.streamlit.io and sign in with GitHub, then choose "New app" and select this repo and the `main` branch and `app.py` as the main file.
+3. Add your OpenAI API key to the app's Secrets (Settings → Secrets). Add a key named `OPENAI_API_KEY` and paste the key value.
+
+Local testing with secrets.toml
+1. Copy `.streamlit/secrets.toml.example` to `.streamlit/secrets.toml` and update the `OPENAI_API_KEY` value for local testing.
+2. Run `py -m streamlit run app.py` and Streamlit will automatically make `st.secrets` available to your app. Note: this file should NOT be committed to git.
+
+Code notes
+- `config.py` attempts to read `OPENAI_API_KEY` from the environment. When running on Streamlit Community Cloud, set the secret as `OPENAI_API_KEY` in the UI and it will be available as an env var for the app.
+
+
 ## Troubleshooting
 
 - If you don't see scoring results, check `scores/<job_id>/score_log.txt` and `scores/<job_id>/last_score_location.txt` for clues. If the migration runs, the HR sidebar should also show the migration summary when you load the app.
