@@ -1,4 +1,3 @@
-
 import streamlit as st
 import os
 import sys
@@ -7,6 +6,7 @@ import docx
 import hashlib
 import json
 from config import OPENAI_API_KEY
+import pandas as pd
 
 # Add the project root to the Python path to access the 'models' module
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -150,7 +150,7 @@ if hr_password == "hr_pass":
         errors = migration_summary.get("errors", [])
         st.sidebar.markdown("---")
         st.sidebar.subheader("Scores storage")
-        st.sidebar.info(f"Scoring files are stored under: `{SCORES_PATH}`")
+        st.sidebar.info(f"Scoring files are stored under: {SCORES_PATH}")
         if moved or merged or errors:
             st.sidebar.write(f"Migration run on startup:")
             if moved:
@@ -160,7 +160,7 @@ if hr_password == "hr_pass":
             if errors:
                 st.sidebar.error(f"Migration errors for: {', '.join(e[0] for e in errors)}")
         else:
-            st.sidebar.write("No legacy scoring files were found in `resumes/` to migrate.")
+            st.sidebar.write("No legacy scoring files were found in resumes/ to migrate.")
     except Exception:
         # don't break HR UI if sidebar message fails
         pass
@@ -220,10 +220,10 @@ def display_job_details(job):
             os.makedirs(job_resume_dir, exist_ok=True)
 
             file_extension = os.path.splitext(uploaded_resume.name)[1]
-            existing_resumes = [f for f in os.listdir(job_resume_dir) if f.startswith(f"{job_file_id}_resume_")]
+            existing_resumes = [f for f in os.listdir(job_resume_dir) if f.startswith(f"{job_file_id}resume")]
             next_resume_number = len(existing_resumes) + 1
             
-            new_resume_filename = f"{job_file_id}_resume_{next_resume_number}{file_extension}"
+            new_resume_filename = f"{job_file_id}resume{next_resume_number}{file_extension}"
             resume_path = os.path.join(job_resume_dir, new_resume_filename)
             
             with open(resume_path, "wb") as f:
@@ -231,7 +231,7 @@ def display_job_details(job):
             
             # --- Scoring Logic ---
             # We'll always attempt scoring, but ensure any error is caught and the JSON file is created.
-            # Primary storage for scored results is in the `scores/<job_id>/` folder.
+            # Primary storage for scored results is in the scores/<job_id>/ folder.
             scores_job_dir = os.path.join(SCORES_PATH, job_file_id)
             os.makedirs(scores_job_dir, exist_ok=True)
             scores_file_path = os.path.join(scores_job_dir, "scoring_results.json")
@@ -323,6 +323,97 @@ def display_job_details(job):
         st.success(st.session_state.resume_upload_success)
         # We can clear the flag if we only want to show it once per upload action
         # For now, it persists until the user navigates away.
+    if hr_password == "hr_pass":
+        scores_file_path = os.path.join(SCORES_PATH, job_file_id, "scoring_results.json")
+
+        if os.path.exists(scores_file_path):
+            with open(scores_file_path, "r") as f:
+                results = json.load(f)
+
+            if results:
+                st.subheader("Resume Scoring Results (Table)")
+                
+                # Convert JSON to DataFrame
+                df = pd.DataFrame(results)
+                
+                # Flatten 'details' dictionary into columns
+                if 'details' in df.columns:
+                    df_table = df[['resume_file', 'score', 'verdict']]
+
+                    
+
+                st.dataframe(df_table)  # Interactive table with sorting
+            else:
+                st.info("No resumes have been scored yet for this job.")
+
+            if results:
+    # Show dropdown for HR to select a student
+                
+                resume_options = [r['resume_file'] for r in results]
+                selected_resume_file = st.selectbox("Select a student resume to generate feedback", resume_options)
+
+                if selected_resume_file:
+                    # Get the selected resume details
+                    selected_resume = next(r for r in results if r['resume_file'] == selected_resume_file)
+
+                    # Generate feedback using OpenAI API
+                    import openai
+
+                    def generate_feedback(details_dict):
+                        client = openai.OpenAI(api_key=OPENAI_API_KEY)
+                        prompt = f"""
+                        You are an HR assistant. A student's resume has been scored with the following breakdown:
+                        {details_dict}
+
+                        Write a polite, constructive email to the student explaining why they were not selected
+                        and what areas they could improve.
+                        """
+                        try:
+                            response = client.chat.completions.create(
+                                model="gpt-4",
+                                messages=[{"role": "user", "content": prompt}],
+                                temperature=0.7   
+                            )
+                            feedback_text = response.choices[0].message.content
+                            return feedback_text
+                        except Exception as e:
+                            return f"Error generating feedback: {e}"
+
+                    if st.button("Generate Feedback"):
+                        feedback = generate_feedback(selected_resume['details'])
+                        st.text_area("Feedback Preview", feedback, height=200)
+
+                        # Optional: send email (requires SMTP setup)
+                        st.subheader("Send Email to Student")
+                        recipient_email = st.text_input("Student Email Address")
+
+                        if st.button("Send Email"):
+                            import smtplib
+                            from email.mime.text import MIMEText
+                            from email.mime.multipart import MIMEMultipart
+
+                            try:
+                                sender_email = "your_email@example.com"
+                                sender_password = "your_email_password"  # Use app password for Gmail
+
+                                msg = MIMEMultipart()
+                                msg['From'] = sender_email
+                                msg['To'] = recipient_email
+                                msg['Subject'] = "Job Application Feedback"
+
+                                msg.attach(MIMEText(feedback, 'plain'))
+
+                                # Connect to SMTP server (Gmail example)
+                                server = smtplib.SMTP('smtp.gmail.com', 587)
+                                server.starttls()
+                                server.login(sender_email, sender_password)
+                                server.send_message(msg)
+                                server.quit()
+
+                                st.success(f"Feedback email sent to {recipient_email}!")
+                            except Exception as e:
+                                st.error(f"Failed to send email: {e}")
+
 
 def display_job_grid(jobs):
     st.header("Available Job Roles 📋")
@@ -359,6 +450,5 @@ def main():
         else:
             display_job_grid(jobs)
 
-if __name__ == "__main__":
+if _name_ == "_main_":
     main()
-
