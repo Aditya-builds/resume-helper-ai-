@@ -1,38 +1,104 @@
 /* --- Job Card Container --- */
 .job-card-container {
-    border: 1px solid #555555;
-    border-radius: 10px;
+    border: 1px solid #444; /* Softer border */
+    border-radius: 16px; /* Smoother rounded corners */
     padding: 20px;
-    margin-bottom: 10px; /* Space below the title */
-    background-color: #3C3C3C;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    height: 150px; /* Fixed height for uniform cards */
+    margin-bottom: 16px; 
+    background: linear-gradient(145deg, #2E2E2E, #3C3C3C); /* Subtle gradient for depth */
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3); /* Deeper shadow */
+    height: 180px; /* Slightly taller for readability */
     display: flex;
     flex-direction: column;
-    justify-content: center; /* Center content vertically */
-    align-items: center; /* Center content horizontally */
-    text-align: center;
+    justify-content: space-between; /* Spread out title + desc + button */
+    align-items: flex-start; /* Left-align for a professional look */
+    text-align: left;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+/* Hover effect */
+.job-card-container:hover {
+    transform: translateY(-5px); /* Lift on hover */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4); 
 }
 
 /* --- Job Card Title --- */
 .job-card-title {
     color: #FFFFFF;
-    font-weight: 600;
-    font-size: 1.1rem;
-    margin: 0; /* Remove default margin */
+    font-weight: 700;
+    font-size: 1.3rem;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
 }
 
-/* --- Disabled Text Area for Job Description --- */
+/* --- Job Description Text (disabled textarea mimic) --- */
 .stTextArea textarea:disabled {
-    background-color: #3C3C3C;
-    color: #EAEAEA;
+    background: transparent; /* Blend with card */
+    color: #CCCCCC;
     border: none;
-    padding-left: 0;
+    padding: 0;
     white-space: pre-wrap;
     line-height: 1.6;
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
 }
 
 /* --- View Details Button --- */
 .stButton > button {
-    width: 100%; /* Make button fill the card width */
+    width: 100%;
+    padding: 10px 14px;
+    background: linear-gradient(90deg, #6A11CB, #2575FC); /* Nice gradient */
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+/* Hover button */
+.stButton > button:hover {
+    background: linear-gradient(90deg, #2575FC, #6A11CB);
+    transform: scale(1.02);
+}
+
+/* --- Job Card Title (Colorful Gradient Text) --- */
+.job-card-title {
+    font-weight: 700;
+    font-size: 1.3rem;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+    background: linear-gradient(90deg, #FF512F, #DD2476); /* Orange → Pink */
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.job-card-container {
+    background: linear-gradient(145deg, #1E1E2F, #2C2C54); 
+    border: none;
+}
+
+/* Change the main app background */
+.stApp {
+    background: linear-gradient(135deg, #1E1E2F, #2C2C54); /* Dark blue gradient */
+    color: #FFFFFF; /* Default text color for readability */
+}
+
+.job-card-container {
+    margin-bottom: 34px; /* More space between job cards */
+}
+
+/* Style the sidebar */
+.stSidebar {
+    background: linear-gradient(135deg, #1A1A2E, #16213E); 
+    color: #FFFFFF;
+/* Sidebar text color */
+    padding: 20px;
+    border-right: 1px solid rgba(255, 255, 255, 0.1); /* Optional separator */
+}
+
+/* Add spacing around each job description box */
+.stTextArea {
+    margin-bottom: 40px; /* Increase this value for more space */
 }
