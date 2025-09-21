@@ -450,5 +450,5 @@ def main():
         else:
             display_job_grid(jobs)
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     main()
