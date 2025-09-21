@@ -5,7 +5,7 @@ import PyPDF2
 import docx
 import hashlib
 import json
-from config import OPENAI_API_KEY
+
 import pandas as pd
 
 # Add the project root to the Python path to access the 'models' module
@@ -16,6 +16,31 @@ from utils.migration import migrate_resumes_to_scores
 
 # Set page config
 st.set_page_config(page_title="Job Application Portal", page_icon="🤖", layout="wide")
+
+# OpenAI API key loader: prefer Streamlit secrets > env var > optional local config.py
+def get_openai_api_key():
+    # 1) st.secrets if available
+    try:
+        if hasattr(st, "secrets") and st.secrets and st.secrets.get("OPENAI_API_KEY"):
+            return st.secrets.get("OPENAI_API_KEY")
+    except Exception:
+        # running in an environment where st.secrets may not be accessible at import time
+        pass
+
+    # 2) environment variable
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key:
+        return api_key
+
+    # 3) optional local config.py (ignored in repo)
+    try:
+        from config import OPENAI_API_KEY as cfg_key
+        return cfg_key
+    except Exception:
+        return None
+
+# load key once
+OPENAI_API_KEY = get_openai_api_key()
 
 # --- Paths ---
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
