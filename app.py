@@ -5,6 +5,7 @@ import PyPDF2
 import docx
 import hashlib
 import json
+import spacy
 
 import pandas as pd
 
@@ -41,6 +42,68 @@ def get_openai_api_key():
 
 # load key once
 OPENAI_API_KEY = get_openai_api_key()
+
+def detect_api_key_source():
+    """Return a short non-sensitive string describing where the OpenAI key was found."""
+    try:
+        if hasattr(st, "secrets") and st.secrets and st.secrets.get("OPENAI_API_KEY"):
+            return "st.secrets"
+    except Exception:
+        pass
+    if os.getenv("OPENAI_API_KEY"):
+        return "env"
+    try:
+        # don't import config at top-level; only check optionally here
+        from config import OPENAI_API_KEY as _cfg
+        if _cfg:
+            return "config.py"
+    except Exception:
+        pass
+    return "not found"
+
+def ensure_spacy_model(model_name="en_core_web_sm"):
+    """Try to load the spaCy model, download it if missing."""
+    try:
+        spacy.load(model_name)
+        return True, f"spaCy model '{model_name}' is available"
+    except OSError:
+        try:
+            # download the model and try again
+            import subprocess, sys as _sys
+            # Use spaCy CLI to download the model
+            from spacy.cli import download
+            download(model_name)
+            spacy.load(model_name)
+            return True, f"spaCy model '{model_name}' downloaded and loaded"
+        except Exception as e:
+            return False, f"Failed to download spaCy model '{model_name}': {e}"
+    except Exception as e:
+        return False, f"Error loading spaCy model '{model_name}': {e}"
+
+# Announce key presence (non-sensitive) and ensure NLP model on startup
+_key_source = detect_api_key_source()
+try:
+    if _key_source == "st.secrets":
+        st.sidebar.success("OpenAI API key found in Streamlit secrets")
+    elif _key_source == "env":
+        st.sidebar.success("OpenAI API key found in environment variables")
+    elif _key_source == "config.py":
+        st.sidebar.warning("OpenAI API key loaded from local config.py (not recommended for production)")
+    else:
+        st.sidebar.error("OpenAI API key not found — add it in Streamlit Secrets or environment variables")
+except Exception:
+    # In rare cases st.sidebar may not be ready at import time; ignore
+    pass
+
+_ok, _msg = ensure_spacy_model()
+try:
+    if _ok:
+        st.sidebar.info(_msg)
+    else:
+        st.sidebar.warning(_msg)
+except Exception:
+    # ignore UI errors during startup
+    pass
 
 # --- Paths ---
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
