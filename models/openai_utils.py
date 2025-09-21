@@ -1,7 +1,32 @@
 import openai
-from config import OPENAI_API_KEY
+import os
+import streamlit as st
 
-openai.api_key = OPENAI_API_KEY
+
+def _get_openai_api_key():
+    # prefer Streamlit secrets
+    try:
+        if hasattr(st, "secrets") and st.secrets and st.secrets.get("OPENAI_API_KEY"):
+            return st.secrets.get("OPENAI_API_KEY")
+    except Exception:
+        pass
+
+    # environment variable
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key:
+        return api_key
+
+    # optional local config
+    try:
+        from config import OPENAI_API_KEY as cfg_key
+        return cfg_key
+    except Exception:
+        return None
+
+
+OPENAI_API_KEY = _get_openai_api_key()
+if OPENAI_API_KEY:
+    openai.api_key = OPENAI_API_KEY
 
 def format_job_description(text):
     """
@@ -19,6 +44,9 @@ def format_job_description(text):
     Formatted Job Description:
     """
     
+    if not OPENAI_API_KEY:
+        return "OpenAI API key not configured. Please set OPENAI_API_KEY in Streamlit secrets or environment."
+
     try:
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -48,6 +76,9 @@ def generate_job_title(text):
     Job Title:
     """
     
+    if not OPENAI_API_KEY:
+        return "OpenAI API key not configured. Please set OPENAI_API_KEY in Streamlit secrets or environment."
+
     try:
         response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
